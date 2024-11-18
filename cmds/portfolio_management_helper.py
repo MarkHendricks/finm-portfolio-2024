@@ -620,6 +620,7 @@ def calc_cross_section_regression(
     )
 
 
+
 def get_best_and_worst(
     summary_statistics: pd.DataFrame,
     stat: str = 'Annualized Sharpe',
@@ -736,7 +737,9 @@ def calc_tangency_weights(
     return_port_ret: bool = False,
     target_ret_rescale_weights: Union[None, float] = None,
     annual_factor: int = 12,
-    name: str = 'Tangency'
+    name: str = 'Tangency',
+    expected_returns: Union[pd.Series, pd.DataFrame] = None,
+    expected_returns_already_annualized: bool = False
 ):
     """
     Calculates tangency portfolio weights based on the covariance matrix of returns.
@@ -769,7 +772,12 @@ def calc_tangency_weights(
         cov_inv = np.linalg.pinv((covmat * annual_factor))  
         
     ones = np.ones(returns.columns.shape) 
-    mu = returns.mean() * annual_factor
+    if expected_returns is not None:
+        mu = expected_returns
+        if not expected_returns_already_annualized:
+            mu *= annual_factor
+    else:
+        mu = returns.mean() * annual_factor
     scaling = 1 / (np.transpose(ones) @ cov_inv @ mu)
     tangent_return = scaling * (cov_inv @ mu)
     tangency_wts = pd.DataFrame(
